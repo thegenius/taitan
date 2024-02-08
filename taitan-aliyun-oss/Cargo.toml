@@ -1,0 +1,19 @@
+[package]
+name = "taitan-aliyun-oss"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+taitan = {path = "../taitan"}
+derive_builder = {workspace = true}
+reqwest = {workspace = true}
+serde = {workspace = true}
+serde_json = {workspace = true}
+hmac = {workspace = true}
+sha2 = {workspace = true}
+base64 = {workspace = true}
+hex = {workspace = true}
+case = {workspace = true}
+tokio = {workspace = true}

@@ -1,0 +1,32 @@
+[package]
+name = "taitan"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "The Next Generation of Web Framework"
+homepage = "https://github.com/thegenius/taitan"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = {workspace = true}
+axum-server = {version = "0.6.0", features = ["tls-rustls"]}
+tokio = {version = "1.35.1", features = ["full"]}
+tokio-util = {version = "0.7", features = ["io"]}
+reqwest = {version = "0.11", features = ["json"]}
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5.0", features = ["fs", "trace"] }
+
+clap = {version = "4.4.18"}
+
+
+serde = { version = "1.0.195", features = ["derive"] }
+serde_json = {version = "1.0.111"}
+
+futures = {version = "0.3"}
+
+thiserror = {version = "1.0.56"}
+tracing = {version = "0.1"}
+chrono = {version = "0.4.2"}
+jsonwebtoken = { version = "9.2.0"}
+luna-orm = {version = "0.3.6"}

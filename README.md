@@ -9,16 +9,16 @@
 [3] Carefully chosen default config.(listen to 0.0.0.0 for example)
 
 - **Ergonomics Result Flow**:  
-[1] every errot handle with thiserror::Error
-[2] Ergonomics Error classification
-[2.1] Recoverable Error: usually I/O error(database/connection)
-[2.2] System Error: Report to Admin, Parse Error, unexpected bug and else
-[2.3] Logic Error: Report to User, password error and so on
-For example
-[1] user input a mess string as input, cause a param Deserialize error, this is logic error  
+[1] every errot handle with thiserror::Error  
+[2] Ergonomics Error classification  
+[2.1] Recoverable Error: usually I/O error(database/connection)  
+[2.2] System Error: Report to Admin, Parse Error, unexpected bug and else  
+[2.3] Logic Error: Report to User, password error and so on  
+For example  
+[1] user input a mess string as input, cause a param Deserialize error, this is logic error    
 [2] user input a valid string as input, but parse error unexpected, this is system error  
 [3] database connection timeout is recoverable error  
-[4] restful timeout is recoverable error
+[4] restful timeout is recoverable error  
 [5] primary key duplicated is logic error(if api is idempotent, it may treat as success)
 
 

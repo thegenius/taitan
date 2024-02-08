@@ -3,14 +3,14 @@
 
 # Features
 
-- **Modern**  
+- <h2>Modern</h2>  
 [1] HTTPS First: http request will redirect to https with **301(permanent)**  
 [2] Graceful Shutdown and Graceful startup.  
 [3] Best Practice: default config.(listen to 0.0.0.0:443 for example)  
 [4] Tracing request
 
 - **Ergonomics Result Flow**:  
-[1] Elaborately Designed Response: 
+[1] Delicately Designed Response 
 ``` 
   200/OK
   {

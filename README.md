@@ -10,7 +10,7 @@
 [4] Tracing request
 
 - **Ergonomics Result Flow**:  
-[1] Designed Response: 
+[1] Elaborately Designed Response: 
 ``` 
   200/OK
   {
@@ -35,6 +35,19 @@ Return with false + err_code + err_msg.
 - false indicate there is an error,  
 - err_code indicate the category of error,  
 - err_msg indicate the concrete err msg, may be you can show to user.  
+
+This design has been tortured by huge amout of system,  
+and proved itself.
+
+Why need three field to indicate one error?
+- false is used by the control flow and error system
+  - error system may throw exception
+  - control flow may jump to error handler
+- err_code is used by error handler logic
+  - almost every time your handle logic need to know error category
+- err_msg is the info you should report to user or developer
+  - logic or control flow should not depend on msg
+
 
 [1] Explicit Error: every error handle with thiserror::Error  
 [2] Ergonomics Error classification  

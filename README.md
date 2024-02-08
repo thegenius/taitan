@@ -9,12 +9,12 @@ http request will redirect to https with 301
 - **Global Error Handling**:  
 every errot handle with thiserror::Error
 
-- work with morden SPA
-1. serve spa files
-2. serve spa routing
-3. SEO
+- **work with modern SPA**
+[1] serve spa files
+[2] serve spa routing
+[3] SEO
 
-- Security
+- **Security**
 1. server security 
 [1] request based limit
 [2] path based request limit
@@ -27,15 +27,15 @@ every errot handle with thiserror::Error
 [1] user-id based forbid
 [2] user-id based request limit
 
-## Human Checking
+- **Human Checking**
 automated human checking with no pain
 
-## Anthentication
+- **Anthentication**
 [1] check who are you! forbid almost all api-endpoint expect specific ones.
 [2] Modern single Sign-On(SSO) with iframe based way, without ancient cookies.
 [3] register and login/logout
 
-## Authorization
+- **Authorization**
 [1] super powerful api-endpoint limited to special roles(admin or system)
 [2] normal user live with resource-based access control
 write control

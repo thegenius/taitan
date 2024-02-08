@@ -1,1 +1,43 @@
-Great art stretches taste, it doesn’t follow tastes
+# Great art stretches taste, it doesn’t follow tastes
+
+
+# Features
+
+## HTTPS First:
+http request will redirect to https with 301
+
+## Global Error Handling:
+every errot handle with thiserror::Error
+
+## work with morden SPA
+1. serve spa files
+2. serve spa routing
+3. SEO
+
+## Security
+1. server security 
+[1] request based limit
+[2] path based request limit
+
+2. ip security
+[1] ip segment forbid
+[2] exact ip forbid
+
+3. user security
+[1] user-id based forbid
+[2] user-id based request limit
+
+## Human Checking
+automated human checking with no pain
+
+## Anthentication
+[1] check who are you! forbid almost all api-endpoint expect specific ones.
+[2] Modern single Sign-On(SSO) with iframe based way, without ancient cookies.
+[3] register and login/logout
+
+## Authorization
+[1] super powerful api-endpoint limited to special roles(admin or system)
+[2] normal user live with resource-based access control
+write control
+read control
+

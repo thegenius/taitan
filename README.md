@@ -25,7 +25,7 @@ every errot handle with thiserror::Error
 [3.1] user-id based forbid  
 [3.2] user-id based request limit  
 
-- **Human Checking**
+- **Human Checking**  
 automated human checking with no pain  
 
 - **Anthentication**(verifying who a user is)    

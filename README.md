@@ -9,20 +9,18 @@ http request will redirect to https with **301(permanent)**
 - **Global Result Flow with Ergonomics Error Handling**:  
 every errot handle with thiserror::Error
 
-- **work with modern SPA**
+- **work with modern SPA**  
 [1] serve spa files  
 [2] serve spa routing  
 [3] SEO  
 
-- **Security**
+- **Security**  
 [1] server security 
 [1.1] request based limit  
 [1.2] path based request limit  
-
 [2] ip security  
 [2.1] ip segment forbid  
 [2.2] exact ip forbid  
-
 [3] user security  
 [3.1] user-id based forbid  
 [3.2] user-id based request limit  

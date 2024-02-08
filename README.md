@@ -21,7 +21,7 @@
   200/OK 
   {
     success: false,
-    err_code: long,
+    err_code: u32,
     err_msg: String
   }
 ```

@@ -30,14 +30,14 @@ every errot handle with thiserror::Error
 - **Human Checking**
 automated human checking with no pain  
 
-- **Anthentication**  
-[1] check who are you! forbid almost all api-endpoint expect specific ones.  
-[2] Modern single Sign-On(SSO) with iframe based way, without ancient cookies.  
-[3] register and login/logout  
+- **Anthentication**(verifying who a user is)    
+[1] check who are you! forbid almost all api-endpoint expect specific ones.    
+[2] Modern single Sign-On(SSO) with iframe based way, without ancient cookies.    
+[3] register and login/logout    
 
-- **Authorization**  
-[1] super powerful api-endpoint limited to special roles(admin or system)  
+- **Authorization**(verifying what they have access to)    
+[1] super powerful api-endpoint limited to special roles(admin or system)    
 [2] normal user live with resource-based access control  
-[2.1] write control  
+[2.1] write control   
 [2.2] read control  
 

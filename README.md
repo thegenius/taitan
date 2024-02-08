@@ -5,7 +5,7 @@
 
 - **Modern**  
 [1] HTTPS First: http request will redirect to https with **301(permanent)**  
-[2] Graceful Shutdown by default
+[2] Graceful Shutdown by default  
 [3] Carefully chosen default config.(listen to 0.0.0.0 for example)
 
 - **Ergonomics Result Flow**:  
@@ -28,7 +28,7 @@ For example
 [3] SEO  
 
 - **Security**  
-[1] server security 
+[1] server security  
 [1.1] request based limit  
 [1.2] path based request limit  
 [2] ip security  

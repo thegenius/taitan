@@ -42,11 +42,16 @@ For example
 automated human checking with no pain  
 
 - **Anthentication**(verifying who a user is)    
+Every request auth must check by redis or database is a heavy burden for server.  
+JWT force the client to prove themselves, this is the right way, but what about Logout.  
+JWT, not redis or database based. Only use database + mem-cache for logout.  
 [1] check who are you! forbid almost all api-endpoint expect specific ones.    
 [2] Modern single Sign-On(SSO) with iframe based way, without ancient cookies.    
 [3] register and login/logout    
 
 - **Authorization**(verifying what they have access to)    
+classic Role-Based-Access-Control(RBAC) is designed for **Enterprise**, not open community.  
+For normal customers, Resource-Based-Access is the right one.
 [1] super powerful api-endpoint limited to special roles(admin or system)    
 [2] normal user live with resource-based access control  
 [2.1] write control   

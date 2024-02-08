@@ -3,7 +3,7 @@
 
 # Features
 
-- *Modern*  
+- <h3>Modern</h3>    
     [1] HTTPS First: http request will redirect to https with **301(permanent)**  
     [2] Graceful Shutdown and Graceful startup.  
     [3] Best Practice: default config.(listen to 0.0.0.0:443 for example)  

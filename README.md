@@ -25,7 +25,7 @@
     err_msg: String
   }
 ```
-  **Why not restful http status code?**  
+  -  **Why not restful http status code?**  
 Because http status code is for resource, for example *.jpg, *.html,  
 RPC is not resource, it is remote call, return a reponse with err_msg.  
 People try to merge RPC to HTTP time after time.  

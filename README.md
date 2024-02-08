@@ -6,11 +6,37 @@
 - **Modern**  
 [1] HTTPS First: http request will redirect to https with **301(permanent)**  
 [2] Graceful Shutdown and Graceful startup.  
-[3] Carefully chosen default config.(listen to 0.0.0.0 for example)
+[3] Best Practice: default config.(listen to 0.0.0.0:443 for example)  
 [4] Tracing request
 
 - **Ergonomics Result Flow**:  
-[1] every errot handle with thiserror::Error  
+[1] Designed Response: 
+``` 
+  200/OK
+  {
+    success : true,
+    data: T
+  }
+  
+  200/OK 
+  {
+    success: false,
+    err_code: long,
+    err_msg: String
+  }
+```
+Why not restful http status code?  
+Because http status code is for resource, for example *.jpg, *.html,  
+RPC is not resource, it is remote call, return a reponse with err_msg.  
+People try to merge RPC to HTTP time after time.  
+And every time I saw mess up.  
+So **BEST PRACTICE** is make them do their own bessiness.  
+Return with false + err_code + err_msg.  
+- false indicate there is an error,  
+- err_code indicate the category of error,  
+- err_msg indicate the concrete err msg, may be you can show to user.  
+
+[1] Explicit Error: every error handle with thiserror::Error  
 [2] Ergonomics Error classification  
   -  Recoverable Error: usually I/O error(database/connection)  
   -  System Error: Report to Admin, Parse Error, unexpected bug and else  
@@ -23,7 +49,7 @@ For example
 [5] primary key duplicated is logic error(if api is idempotent, it may treat as success)
 
 
-- **work with modern SPA**  
+- **Modern SPA Support**  
 [1] serve spa files  
 [2] serve spa routing  
 [3] SEO  

@@ -4,9 +4,9 @@
 # Features
 
 - **HTTPS First:**  
-http request will redirect to https with 301
+http request will redirect to https with **301(permanent)**  
 
-- **Global Error Handling**:  
+- **Global Result Flow with Ergonomics Error Handling**:  
 every errot handle with thiserror::Error
 
 - **work with modern SPA**
@@ -19,25 +19,25 @@ every errot handle with thiserror::Error
 [1.1] request based limit  
 [1.2] path based request limit  
 
-[2] ip security
-[2.1] ip segment forbid
-[2.2] exact ip forbid
+[2] ip security  
+[2.1] ip segment forbid  
+[2.2] exact ip forbid  
 
-[3] user security
-[3.1] user-id based forbid
-[3.2] user-id based request limit
+[3] user security  
+[3.1] user-id based forbid  
+[3.2] user-id based request limit  
 
 - **Human Checking**
-automated human checking with no pain
+automated human checking with no pain  
 
-- **Anthentication**
-[1] check who are you! forbid almost all api-endpoint expect specific ones.
-[2] Modern single Sign-On(SSO) with iframe based way, without ancient cookies.
-[3] register and login/logout
+- **Anthentication**  
+[1] check who are you! forbid almost all api-endpoint expect specific ones.  
+[2] Modern single Sign-On(SSO) with iframe based way, without ancient cookies.  
+[3] register and login/logout  
 
-- **Authorization**
-[1] super powerful api-endpoint limited to special roles(admin or system)
-[2] normal user live with resource-based access control
-[2.1] write control
-[2.2] read control
+- **Authorization**  
+[1] super powerful api-endpoint limited to special roles(admin or system)  
+[2] normal user live with resource-based access control  
+[2.1] write control  
+[2.2] read control  
 

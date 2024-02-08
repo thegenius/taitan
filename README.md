@@ -5,15 +5,16 @@
 
 - **Modern**  
 [1] HTTPS First: http request will redirect to https with **301(permanent)**  
-[2] Graceful Shutdown by default  
+[2] Graceful Shutdown and Graceful startup.  
 [3] Carefully chosen default config.(listen to 0.0.0.0 for example)
+[4] Tracing request
 
 - **Ergonomics Result Flow**:  
 [1] every errot handle with thiserror::Error  
 [2] Ergonomics Error classification  
-[2.1] Recoverable Error: usually I/O error(database/connection)  
-[2.2] System Error: Report to Admin, Parse Error, unexpected bug and else  
-[2.3] Logic Error: Report to User, password error and so on  
+  [1] Recoverable Error: usually I/O error(database/connection)  
+  [2] System Error: Report to Admin, Parse Error, unexpected bug and else  
+  [3] Logic Error: Report to User, password error and so on  
 For example  
 [1] user input a mess string as input, cause a param Deserialize error, this is logic error    
 [2] user input a valid string as input, but parse error unexpected, this is system error  

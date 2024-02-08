@@ -51,7 +51,7 @@ JWT, not redis or database based. Only use database + mem-cache for logout.
 
 - **Authorization**(verifying what they have access to)    
 classic Role-Based-Access-Control(RBAC) is designed for **Enterprise**, not open community.  
-For normal customers, Resource-Based-Access is the right one.
+For normal customers, Resource-Based-Access is the right policy.  
 [1] super powerful api-endpoint limited to special roles(admin or system)    
 [2] normal user live with resource-based access control  
 [2.1] write control   

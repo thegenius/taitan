@@ -1,4 +1,4 @@
-# Great art stretches taste, it doesn’t follow tastes
+# Great Art Stretches Taste, It Doesn’t Follow Tastes.
 
 
 # Features

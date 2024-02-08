@@ -1,4 +1,4 @@
-<div align='center'> <font size='70'>Great Art Stretches Taste, It Doesn’t Follow Tastes.</font></div>
+<div align='center'> <h1>Great Art Stretches Taste, It Doesn’t Follow Tastes.</h1></div>
 
 
 # Features

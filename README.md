@@ -3,11 +3,11 @@
 
 # Features
 
-- <h3>Modern</h3>    
-    [1] HTTPS First: http request will redirect to https with **301(permanent)**  
-    [2] Graceful Shutdown and Graceful startup.  
-    [3] Best Practice: default config.(listen to 0.0.0.0:443 for example)  
-    [4] Tracing request
+- **Modern**    
+[1] HTTPS First: http request will redirect to https with **301(permanent)**  
+[2] Graceful Shutdown and Graceful startup.  
+[3] Best Practice: default config.(listen to 0.0.0.0:443 for example)  
+[4] Tracing request
 
 - <h2>Ergonomics Result Flow</h2>  
 [1] Delicately Designed Response 

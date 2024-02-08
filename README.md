@@ -3,18 +3,18 @@
 
 # Features
 
-## HTTPS First:
+- **HTTPS First:**  
 http request will redirect to https with 301
 
-## Global Error Handling:
+- **Global Error Handling**:  
 every errot handle with thiserror::Error
 
-## work with morden SPA
+- work with morden SPA
 1. serve spa files
 2. serve spa routing
 3. SEO
 
-## Security
+- Security
 1. server security 
 [1] request based limit
 [2] path based request limit

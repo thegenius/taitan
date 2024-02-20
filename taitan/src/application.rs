@@ -55,12 +55,12 @@ impl<'a> Application<'a> {
 
     #[cfg(debug_assertions)]
     pub async fn run(self) {
-        self.run_http();
+        self.run_http().await;
     }
 
     #[cfg(not(debug_assertions))]
     pub async fn run(self) {
-        self.run_https();
+        self.run_https().await;
     }
 
     pub async fn run_https(self) {

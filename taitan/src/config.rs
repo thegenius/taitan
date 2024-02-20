@@ -4,8 +4,8 @@ use std::borrow::Cow;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Args<'a> {
     pub http: HttpConfig<'a>,
-    pub statics: StaticFilesConfig<'a>,
-    pub log_dir: Cow<'a, str>,
+    pub statics: Option<StaticFilesConfig<'a>>,
+    pub log_dir: Option<Cow<'a, str>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]

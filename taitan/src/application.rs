@@ -1,5 +1,5 @@
-use crate::config;
 use crate::config::HttpConfig;
+use crate::config::{self, Args, StaticFilesConfig};
 use axum::Router;
 
 use axum::handler::HandlerWithoutStateExt;
@@ -7,6 +7,7 @@ use axum::{
     extract::Host,
     http::{StatusCode, Uri},
     response::Redirect,
+    routing::{get, post},
     BoxError,
 };
 use axum_server::tls_rustls::RustlsConfig;
@@ -23,9 +24,33 @@ pub struct Application<'a> {
     args: config::Args<'a>,
 }
 
+async fn ok() -> StatusCode {
+    return StatusCode::OK;
+}
+
+fn get_default_router() -> Router {
+    let router = Router::new()
+        .route("/", get(ok))
+        .route("/health", get(ok))
+        .route("/ready", get(ok));
+    return router;
+}
+
 impl<'a> Application<'a> {
     pub fn new(router: Router, args: config::Args<'a>) -> Self {
         Self { router, args }
+    }
+
+    pub fn default_dev() -> Self {
+        let args = Args {
+            http: HttpConfig::new("0.0.0.0", 80, None),
+            statics: None,
+            log_dir: None,
+        };
+        Self {
+            router: get_default_router(),
+            args,
+        }
     }
 
     #[cfg(debug_assertions)]

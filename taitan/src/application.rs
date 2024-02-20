@@ -53,6 +53,11 @@ impl<'a> Application<'a> {
         }
     }
 
+    pub fn add_router(&mut self, router: Router) {
+        let merged = Router::new().merge(self.router.clone()).merge(router);
+        self.router = merged;
+    }
+
     #[cfg(debug_assertions)]
     pub async fn run(self) {
         self.run_http().await;

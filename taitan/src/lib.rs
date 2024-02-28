@@ -1,3 +1,6 @@
+#![allow(async_fn_in_trait)]
+#![allow(dead_code)]
+#![forbid(unsafe_code)]
 pub mod application;
 pub mod config;
 pub mod const_val;

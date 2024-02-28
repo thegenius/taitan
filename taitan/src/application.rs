@@ -53,6 +53,10 @@ impl<'a> Application<'a> {
         }
     }
 
+    pub fn get_router(&self) -> &Router {
+        return &self.router;
+    }
+
     pub fn add_router(&mut self, router: Router) {
         let merged = Router::new().merge(self.router.clone()).merge(router);
         self.router = merged;

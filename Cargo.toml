@@ -2,14 +2,14 @@
 members = [
   "taitan",
   "taitan-aliyun-oss"
-]
+, "taitan-test"]
 
 default-members = [
   "taitan"
 ]
 
 [workspace.package]
-version = "0.1.5"
+version = "0.1.6"
 rust-version = "1.75.0"
 
 [workspace.dependencies]
@@ -17,6 +17,7 @@ axum = {version = "0.7.4", features = ["multipart"]}
 axum-server = {version = "0.6.0", features = ["tls-rustls"]}
 tokio = {version = "1.35.1", features = ["full"]}
 tokio-util = {version = "0.7", features = ["io"]}
+http-body-util = {version = "0.1.0"}
 reqwest = {version = "0.11", features = ["json"]}
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5.0", features = ["fs", "trace"] }

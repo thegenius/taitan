@@ -15,12 +15,15 @@ pub enum ErrorCode {
     Success,
     LogicError,
     AxumError,
+    AxumMultipartError,
     SerdeError,
     ChronoTimeParseError,
     DatabaseError,
     JwtError,
     FileError,
     ReqwestError,
+    FromUtf8Error,
+    UuidError
 }
 
 impl ErrorCode {
@@ -30,12 +33,15 @@ impl ErrorCode {
             Self::Success => "Success",
             Self::LogicError => "LogicError",
             Self::AxumError => "AxumError",
+            Self::FromUtf8Error => "FromUtf8Error",
+            Self::AxumMultipartError => "AxumMultipartError",
             Self::SerdeError => "SerdeError",
             Self::ChronoTimeParseError => "ChronoTimeParseError",
             Self::DatabaseError => "DatabaseError",
             Self::JwtError => "JwtError",
             Self::FileError => "FileError",
             Self::ReqwestError => "ReqwestError",
+            Self::UuidError => "UuidError"
         }
     }
 
@@ -54,6 +60,9 @@ pub enum Error {
     #[error("axum error: {0:?}")]
     AxumError(#[from] axum::Error),
 
+    #[error("axum multipart error: {0:?}")]
+    AxumMultipartError(#[from] axum::extract::multipart::MultipartError),
+
     #[error("serde error ({0:?}")]
     SerdeError(#[from] serde_json::Error),
 
@@ -71,6 +80,12 @@ pub enum Error {
 
     #[error("file error: {0:?}")]
     ReqwestError(#[from] reqwest::Error),
+
+    #[error("from utf8 error: {0:?}")]
+    FromUtf8Error(#[from] std::string::FromUtf8Error),
+
+    #[error("uuid error: {0:?}")]
+    UuidError(#[from] uuid::Error)
 }
 
 impl Error {
@@ -78,12 +93,15 @@ impl Error {
         match self {
             Error::LogicError(_) => ErrorCode::LogicError,
             Error::AxumError(_) => ErrorCode::AxumError,
+            Error::AxumMultipartError(_) => ErrorCode::AxumMultipartError,
             Error::SerdeError(_) => ErrorCode::SerdeError,
             Error::ChronoTimeParseError(_) => ErrorCode::ChronoTimeParseError,
             Error::DatabaseError(_) => ErrorCode::DatabaseError,
             Error::JwtError(_) => ErrorCode::JwtError,
             Error::FileError(_) => ErrorCode::FileError,
             Error::ReqwestError(_) => ErrorCode::ReqwestError,
+            Error::FromUtf8Error(_) => ErrorCode::FromUtf8Error,
+            Error::UuidError(_) => ErrorCode::UuidError
         }
     }
     pub fn logic_error<'a>(msg: impl Into<Cow<'a, str>>) -> Self {

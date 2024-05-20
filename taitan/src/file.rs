@@ -8,7 +8,7 @@ use axum::{
     routing::{get, post},
     BoxError, Router,
 };
-use futures::{Stream, TryStreamExt};
+use futures::{FutureExt, Stream, TryStreamExt};
 use serde_json::error::Category;
 use std::io;
 use std::io::SeekFrom;
@@ -79,11 +79,33 @@ fn save_etag(file_name: &str, etag: &str) -> Result<()> {
    --AaB03x--
 */
 // multipart可以上传多个文件，但是整体的multipart的axum默认是2MB，在taitan中默认改为了10MB
-pub async fn save_to_file(request_id: Uuid, dir: impl AsRef<str>, mut multipart: Multipart) -> Result<Vec<String>> {
+pub async fn save_to_file(dir: impl AsRef<str>, mut multipart: Multipart, uuid_name: Option<String>) -> Result<Vec<String>> {
+    // request_uuid must place on the heading of multipart
+    if let Some(uuid_name) = uuid_name {
+        if let Ok(Some(field)) = multipart.next_field().await {
+            if let Some(field_name) = field.name() {
+                if field_name == uuid_name {
+                    let data = field.bytes().await?;
+                    let data_string = String::from_utf8(data.to_vec())?;
+                    let uuid_prefix = uuid::Uuid::parse_str(&data_string)?;
+                    let prefix = uuid_prefix.as_simple().to_string();
+                    return Ok(save_to_file_with_prefix(dir, &prefix, multipart).await?);
+                }
+            }
+        }
+    } else {
+        return Ok(save_to_file_with_prefix(dir, "", multipart).await?);
+    }
+    return Ok(Vec::new());
+}
+
+
+pub async fn save_to_file_with_prefix(dir: impl AsRef<str>, prefix: impl AsRef<str>, mut multipart: Multipart) -> Result<Vec<String>> {
     let mut files: Vec<String> = Vec::new();
+    let prefix_string = prefix.as_ref();
     while let Ok(Some(field)) = multipart.next_field().await {
         if let Some(file_name) = field.file_name() {
-            let final_file_name = format!("{}.{}", request_id.to_string(), file_name.to_owned());
+            let final_file_name = format!("{}.{}", prefix_string.to_string(), file_name.to_owned());
             let mut file = create_file(&dir, &final_file_name).await?;
             let (_, upper_bound)= field.size_hint();
             if upper_bound.is_none() {
@@ -103,6 +125,8 @@ pub async fn save_to_file(request_id: Uuid, dir: impl AsRef<str>, mut multipart:
     }
     return Ok(files);
 }
+
+
 
 async fn create_file(dir: impl AsRef<str>, file_name: impl AsRef<str>) -> Result<File> {
     let path = std::path::Path::new(dir.as_ref()).join(file_name.as_ref());

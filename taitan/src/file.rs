@@ -79,7 +79,7 @@ fn save_etag(file_name: &str, etag: &str) -> Result<()> {
    --AaB03x--
 */
 // multipart可以上传多个文件，但是整体的multipart的axum默认是2MB，在taitan中默认改为了10MB
-async fn save_to_file(request_id: Uuid, dir: impl AsRef<str>, mut multipart: Multipart) -> Result<Vec<String>> {
+pub async fn save_to_file(request_id: Uuid, dir: impl AsRef<str>, mut multipart: Multipart) -> Result<Vec<String>> {
     let mut files: Vec<String> = Vec::new();
     while let Ok(Some(field)) = multipart.next_field().await {
         if let Some(file_name) = field.file_name() {
@@ -119,7 +119,7 @@ async fn create_file(dir: impl AsRef<str>, file_name: impl AsRef<str>) -> Result
     Ok(file)
 }
 
-async fn stream_to_file<S, E>(file: &mut File, stream: S) -> Result<()>
+pub async fn stream_to_file<S, E>(file: &mut File, stream: S) -> Result<()>
 where
     S: Stream<Item = std::result::Result<Bytes, E>>,
     E: Into<BoxError>,

@@ -12,15 +12,20 @@ rust-version = {workspace = true}
 [dependencies]
 axum = {workspace = true}
 axum-server = {version = "0.6.0", features = ["tls-rustls"]}
+axum-extra = {version = "0.9.2", features = ["typed-header"]}
+
 tokio = {version = "1.35.1", features = ["full"]}
 tokio-util = {version = "0.7", features = ["io"]}
 http-body-util = {version = "0.1.0"}
 reqwest = {version = "0.11", features = ["json"]}
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5.0", features = ["fs", "trace"] }
+headers = {version = "0.4.0"}
 
 clap = {version = "4.4.18"}
-
+once_cell = {version = "1.19.0"}
+rand = {version = "0.8.5"}
+uuid = {version = "1.8.0", features = ["v4", "fast-rng",   "macro-diagnostics", ]}
 
 serde = { version = "1.0.195", features = ["derive"] }
 serde_json = {version = "1.0.111"}
@@ -34,5 +39,6 @@ chrono = {version = "0.4.2"}
 jsonwebtoken = { version = "9.2.0"}
 luna-orm = {version = "0.3.6"}
 
+
 [dev-dependencies]
-taitan-test = {version = "0.1.6"}
+taitan-test = {version = "0.1.7"}

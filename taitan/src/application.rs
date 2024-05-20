@@ -5,6 +5,7 @@ use axum::Router;
 use axum::handler::HandlerWithoutStateExt;
 use axum::{
     extract::Host,
+    extract::DefaultBodyLimit,
     http::{StatusCode, Uri},
     response::Redirect,
     routing::{get, post},
@@ -28,6 +29,7 @@ async fn ok() -> StatusCode {
     return StatusCode::OK;
 }
 
+
 fn get_default_router() -> Router {
     let router = Router::new()
         .route("/", get(ok))
@@ -43,7 +45,7 @@ impl<'a> Application<'a> {
 
     pub fn default_dev() -> Self {
         let args = Args {
-            http: HttpConfig::new("0.0.0.0", 80, None),
+            http: HttpConfig::local(),
             statics: None,
             log_dir: None,
         };
@@ -102,11 +104,12 @@ impl<'a> Application<'a> {
 #[cfg(debug_assertions)]
 async fn make_http_server<'a>(router: Router, http_config: HttpConfig<'a>) {
     let addr = SocketAddr::from(([0, 0, 0, 0], http_config.port));
+    
     let handle = Handle::new();
     tokio::spawn(graceful_shutdown(handle.clone()));
     axum_server::bind(addr)
         .handle(handle)
-        .serve(router.into_make_service_with_connect_info::<SocketAddr>())
+        .serve(router.layer(DefaultBodyLimit::max(http_config.max_body_limit)).into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
 }
@@ -125,7 +128,7 @@ async fn make_https_server<'a>(router: Router, http_config: HttpConfig<'a>) {
     tokio::spawn(graceful_shutdown(handle.clone()));
     axum_server::bind_rustls(addr, rustls_config)
         .handle(handle)
-        .serve(router.into_make_service_with_connect_info::<SocketAddr>())
+        .serve(router.layer(DefaultBodyLimit::max(http_config.max_body_limit)).into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
 }

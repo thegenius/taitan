@@ -21,6 +21,7 @@ use serde_json::json;
 use std::fmt::Display;
 
 mod authorizator;
+mod blacklist;
 mod claims;
 mod error;
 mod keys;

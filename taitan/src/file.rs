@@ -16,6 +16,7 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio::{fs::File, fs::OpenOptions, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tracing::info;
+use uuid::Uuid;
 
 pub trait FileManager {
     // return the list of owner's file of specified category
@@ -59,21 +60,48 @@ fn check_etag(file_name: &str, etag: &str) -> Result<bool> {
 fn save_etag(file_name: &str, etag: &str) -> Result<()> {
     Ok(())
 }
+/* ********************************************
+   Content-Disposition: form-data; name="files"
+   Content-Type: multipart/mixed; boundary=BbC04y
 
-async fn save_to_file(dir: impl AsRef<str>, mut multipart: Multipart) -> Result<String> {
-    let final_file = "".to_string();
-    let mut file = create_file(dir, &final_file).await?;
+   --BbC04y
+   Content-Disposition: file; filename="file1.txt"
+   Content-Type: text/plain
+
+   ... contents of file1.txt ...
+   --BbC04y
+   Content-Disposition: file; filename="file2.gif"
+   Content-Type: image/gif
+   Content-Transfer-Encoding: binary
+
+   ...contents of file2.gif...
+   --BbC04y--
+   --AaB03x--
+*/
+// multipart可以上传多个文件，但是整体的multipart的axum默认是2MB，在taitan中默认改为了10MB
+async fn save_to_file(request_id: Uuid, dir: impl AsRef<str>, mut multipart: Multipart) -> Result<Vec<String>> {
+    let mut files: Vec<String> = Vec::new();
     while let Ok(Some(field)) = multipart.next_field().await {
-        let file_name = if let Some(file_name) = field.file_name() {
-            file_name.to_owned()
+        if let Some(file_name) = field.file_name() {
+            let final_file_name = format!("{}.{}", request_id.to_string(), file_name.to_owned());
+            let mut file = create_file(&dir, &final_file_name).await?;
+            let (_, upper_bound)= field.size_hint();
+            if upper_bound.is_none() {
+                return Err(Error::logic_error("file size not known"));
+            }
+            const SINGLE_FILE_MAX_SIZE: usize = 5 * 1024 * 1024; // single file limit
+            let upper_bound = upper_bound.unwrap();
+            if upper_bound > SINGLE_FILE_MAX_SIZE {
+                return Err(Error::logic_error("file size larger than 5MB"));
+            }
+
+            files.push(final_file_name);
+            stream_to_file(&mut file, field).await?;
         } else {
             continue;
         };
-
-        stream_to_file(&mut file, field).await?;
     }
-
-    Ok(final_file)
+    return Ok(files);
 }
 
 async fn create_file(dir: impl AsRef<str>, file_name: impl AsRef<str>) -> Result<File> {

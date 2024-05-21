@@ -2,7 +2,7 @@ use crate::error::Error;
 use crate::result::Result;
 use axum::{
     body::Bytes,
-    extract::{Multipart, Path, Request},
+    extract::{multipart::Field, Multipart, Path, Request},
     http::StatusCode,
     response::{Html, Redirect},
     routing::{get, post},
@@ -101,28 +101,49 @@ pub async fn save_to_file(dir: impl AsRef<str>, mut multipart: Multipart, uuid_n
 }
 
 
+fn get_validate_file_name(dir: &str, prefix_string: &str, file_name: &str, field: &Field) -> Option<String> {
+    let final_file_name: String;
+    if prefix_string.is_empty() {
+        final_file_name = file_name.to_owned();
+        if !validate_path(dir.as_ref(), &final_file_name, 1) {
+            return None;
+        }
+    } else {
+        final_file_name = format!("{}.{}", prefix_string.to_string(), file_name.to_owned());
+        if !validate_path(dir.as_ref(), &final_file_name, 2) {
+            return None;
+        }
+    }
+
+    let (_, upper_bound)= field.size_hint();
+    if upper_bound.is_none() {
+        debug!("file size not known");
+        return None;
+    }
+    
+    const SINGLE_FILE_MAX_SIZE: usize = 5 * 1024 * 1024; // single file limit
+    let upper_bound = upper_bound.unwrap();
+    if upper_bound > SINGLE_FILE_MAX_SIZE {
+        debug!("file size larger than 5MB");
+        return None;
+    }
+
+    return Some(final_file_name);
+}
+
 pub async fn save_to_file_with_prefix(dir: impl AsRef<str>, prefix: impl AsRef<str>, mut multipart: Multipart) -> Result<Vec<String>> {
     info!("save_to_file_with_prefix({:?}, {:?})", dir.as_ref(), prefix.as_ref());
     let mut files: Vec<String> = Vec::new();
     let prefix_string = prefix.as_ref();
     while let Ok(Some(field)) = multipart.next_field().await {
         if let Some(file_name) = field.file_name() {
-            let final_file_name = format!("{}.{}", prefix_string.to_string(), file_name.to_owned());
-            let mut file = create_file(&dir, &final_file_name).await?;
-            debug!("save_to_file_with_prefix - final_file_name: {:?}", final_file_name);
-            let (_, upper_bound)= field.size_hint();
-            if upper_bound.is_none() {
-                return Err(Error::logic_error("file size not known"));
+            let final_file_name = get_validate_file_name(dir.as_ref(), prefix_string.as_ref(), file_name, &field);
+            if let Some(final_file_name) = final_file_name {
+                debug!("save_to_file_with_prefix - final_file_name: {:?}", final_file_name);
+                let mut file = create_file(&dir,  &final_file_name).await?;
+                stream_to_file(&mut file, field).await?;
+                files.push(final_file_name);
             }
-            const SINGLE_FILE_MAX_SIZE: usize = 5 * 1024 * 1024; // single file limit
-            let upper_bound = upper_bound.unwrap();
-            if upper_bound > SINGLE_FILE_MAX_SIZE {
-                debug!("");
-                return Err(Error::logic_error("file size larger than 5MB"));
-            }
-
-            files.push(final_file_name);
-            stream_to_file(&mut file, field).await?;
         } else {
             continue;
         };
@@ -135,11 +156,6 @@ pub async fn save_to_file_with_prefix(dir: impl AsRef<str>, prefix: impl AsRef<s
 async fn create_file(dir: impl AsRef<str>, file_name: impl AsRef<str>) -> Result<File> {
     info!("create_file: {:?}, {:?}", dir.as_ref(), file_name.as_ref());
     let path = std::path::Path::new(dir.as_ref()).join(file_name.as_ref());
-    if !path_is_valid(path.to_str().unwrap()) {
-        info!("create_file path invalid: {:?}", path);
-        return Err(Error::logic_error("invalid path"));
-    }
-    info!("create_file path valid: {:?}, {:?}", dir.as_ref(), file_name.as_ref());
     let file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -177,10 +193,18 @@ where
     Ok(())
 }
 
+pub fn validate_path(dir: &str, file_name: &str, valid_component: usize) -> bool {
+    let path = std::path::Path::new(dir).join(file_name);
+    if let Some(path_str) = path.to_str() {
+        return is_path_valid(path_str, valid_component);
+    }
+    return false;
+}
+
 // to prevent directory traversal attacks we ensure the path consists of exactly one normal
 // component
-pub fn path_is_valid(path: impl AsRef<str>) -> bool {
-    let path = std::path::Path::new(path.as_ref());
+pub fn is_path_valid(path: &str, valid_component: usize) -> bool {
+    let path = std::path::Path::new(path);
     let mut components = path.components().peekable();
 
     if let Some(first) = components.peek() {
@@ -189,6 +213,5 @@ pub fn path_is_valid(path: impl AsRef<str>) -> bool {
         }
     }
     let count = components.count();
-    info!("components count: {}", count);
-    return count == 1;
+    return count == valid_component;
 }

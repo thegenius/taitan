@@ -9,7 +9,7 @@ default-members = [
 ]
 
 [workspace.package]
-version = "0.1.10"
+version = "0.1.11"
 rust-version = "1.75.0"
 
 [workspace.dependencies]

@@ -15,7 +15,7 @@ use std::io::SeekFrom;
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio::{fs::File, fs::OpenOptions, io::BufWriter};
 use tokio_util::io::StreamReader;
-use tracing::info;
+use tracing::{debug, info};
 use uuid::Uuid;
 
 pub trait FileManager {
@@ -81,6 +81,7 @@ fn save_etag(file_name: &str, etag: &str) -> Result<()> {
 // multipart可以上传多个文件，但是整体的multipart的axum默认是2MB，在taitan中默认改为了10MB
 pub async fn save_to_file(dir: impl AsRef<str>, mut multipart: Multipart, uuid_name: Option<String>) -> Result<Vec<String>> {
     // request_uuid must place on the heading of multipart
+    info!("save_to_file({:?}, {:?})", dir.as_ref(), uuid_name);
     if let Some(uuid_name) = uuid_name {
         if let Ok(Some(field)) = multipart.next_field().await {
             if let Some(field_name) = field.name() {
@@ -101,12 +102,14 @@ pub async fn save_to_file(dir: impl AsRef<str>, mut multipart: Multipart, uuid_n
 
 
 pub async fn save_to_file_with_prefix(dir: impl AsRef<str>, prefix: impl AsRef<str>, mut multipart: Multipart) -> Result<Vec<String>> {
+    info!("save_to_file_with_prefix({:?}, {:?})", dir.as_ref(), prefix.as_ref());
     let mut files: Vec<String> = Vec::new();
     let prefix_string = prefix.as_ref();
     while let Ok(Some(field)) = multipart.next_field().await {
         if let Some(file_name) = field.file_name() {
             let final_file_name = format!("{}.{}", prefix_string.to_string(), file_name.to_owned());
             let mut file = create_file(&dir, &final_file_name).await?;
+            debug!("save_to_file_with_prefix - final_file_name: {:?}", final_file_name);
             let (_, upper_bound)= field.size_hint();
             if upper_bound.is_none() {
                 return Err(Error::logic_error("file size not known"));
@@ -153,7 +156,7 @@ where
         .await
         .map_err(Error::FileError)?;
     */
-
+    info!("stream_to_file begin ...");
     // Convert the stream into an `AsyncRead`.
     let body_with_io_error = stream.map_err(|err| io::Error::new(io::ErrorKind::Other, err));
     let body_reader = StreamReader::new(body_with_io_error);
@@ -165,6 +168,7 @@ where
     tokio::io::copy(&mut body_reader, &mut file)
         .await
         .map_err(Error::FileError)?;
+    info!("stream_to_file success");
     Ok(())
 }
 

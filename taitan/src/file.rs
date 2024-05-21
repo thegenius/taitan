@@ -136,6 +136,7 @@ async fn create_file(dir: impl AsRef<str>, file_name: impl AsRef<str>) -> Result
     info!("create_file: {:?}, {:?}", dir.as_ref(), file_name.as_ref());
     let path = std::path::Path::new(dir.as_ref()).join(file_name.as_ref());
     if !path_is_valid(path.to_str().unwrap()) {
+        info!("create_file path invalid: {:?}", path);
         return Err(Error::logic_error("invalid path"));
     }
     info!("create_file path valid: {:?}, {:?}", dir.as_ref(), file_name.as_ref());
@@ -187,6 +188,7 @@ pub fn path_is_valid(path: impl AsRef<str>) -> bool {
             return false;
         }
     }
-
-    components.count() == 1
+    let count = components.count();
+    info!("components count: {}", count);
+    return count == 1;
 }

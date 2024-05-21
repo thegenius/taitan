@@ -2,7 +2,7 @@ use crate::error::Error;
 use crate::result::Result;
 use axum::{
     body::Bytes,
-    extract::{multipart::Field, Multipart, Path, Request},
+    extract::{multipart::Field, Multipart, Request},
     http::StatusCode,
     response::{Html, Redirect},
     routing::{get, post},
@@ -17,6 +17,7 @@ use tokio::{fs::File, fs::OpenOptions, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tracing::{debug, info};
 use uuid::Uuid;
+use std::path::Path;
 
 pub trait FileManager {
     // return the list of owner's file of specified category
@@ -79,9 +80,9 @@ fn save_etag(file_name: &str, etag: &str) -> Result<()> {
    --AaB03x--
 */
 // multipart可以上传多个文件，但是整体的multipart的axum默认是2MB，在taitan中默认改为了10MB
-pub async fn save_to_file(dir: impl AsRef<str>, mut multipart: Multipart, uuid_name: Option<String>) -> Result<Vec<String>> {
+pub async fn save_to_file(dir: &Path, mut multipart: Multipart, uuid_name: Option<String>) -> Result<Vec<String>> {
     // request_uuid must place on the heading of multipart
-    info!("save_to_file({:?}, {:?})", dir.as_ref(), uuid_name);
+    info!("save_to_file({:?}, {:?})", dir, uuid_name);
     if let Some(uuid_name) = uuid_name {
         if let Ok(Some(field)) = multipart.next_field().await {
             if let Some(field_name) = field.name() {
@@ -101,7 +102,7 @@ pub async fn save_to_file(dir: impl AsRef<str>, mut multipart: Multipart, uuid_n
 }
 
 
-fn get_validate_file_name(dir: &str, prefix_string: &str, file_name: &str, field: &Field) -> Option<String> {
+fn get_validate_file_name(dir: &Path, prefix_string: &str, file_name: &str, field: &Field) -> Option<String> {
     let final_file_name: String;
     if prefix_string.is_empty() {
         final_file_name = file_name.to_owned();
@@ -131,13 +132,13 @@ fn get_validate_file_name(dir: &str, prefix_string: &str, file_name: &str, field
     return Some(final_file_name);
 }
 
-pub async fn save_to_file_with_prefix(dir: impl AsRef<str>, prefix: impl AsRef<str>, mut multipart: Multipart) -> Result<Vec<String>> {
-    info!("save_to_file_with_prefix({:?}, {:?})", dir.as_ref(), prefix.as_ref());
+pub async fn save_to_file_with_prefix(dir: &Path, prefix: impl AsRef<str>, mut multipart: Multipart) -> Result<Vec<String>> {
+    info!("save_to_file_with_prefix({:?}, {:?})", dir, prefix.as_ref());
     let mut files: Vec<String> = Vec::new();
     let prefix_string = prefix.as_ref();
     while let Ok(Some(field)) = multipart.next_field().await {
         if let Some(file_name) = field.file_name() {
-            let final_file_name = get_validate_file_name(dir.as_ref(), prefix_string.as_ref(), file_name, &field);
+            let final_file_name = get_validate_file_name(dir, prefix_string.as_ref(), file_name, &field);
             if let Some(final_file_name) = final_file_name {
                 debug!("save_to_file_with_prefix - final_file_name: {:?}", final_file_name);
                 let mut file = create_file(&dir,  &final_file_name).await?;
@@ -153,9 +154,10 @@ pub async fn save_to_file_with_prefix(dir: impl AsRef<str>, prefix: impl AsRef<s
 
 
 
-async fn create_file(dir: impl AsRef<str>, file_name: impl AsRef<str>) -> Result<File> {
-    info!("create_file: {:?}, {:?}", dir.as_ref(), file_name.as_ref());
-    let path = std::path::Path::new(dir.as_ref()).join(file_name.as_ref());
+async fn create_file(dir: &Path, file_name: impl AsRef<str>) -> Result<File> {
+    debug!("create_file: {:?}, {:?}", dir, file_name.as_ref());
+    let path = dir.join(file_name.as_ref());
+    let path_clone = path.clone();
     let file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -163,7 +165,7 @@ async fn create_file(dir: impl AsRef<str>, file_name: impl AsRef<str>) -> Result
         .open(path)
         .await
         .map_err(|err| Error::FileError(err))?;
-    info!("create_file success: {:?}, {:?}", dir.as_ref(), file_name.as_ref());
+    debug!("create_file success: {:?}, {:?}", path_clone, file_name.as_ref());
     Ok(file)
 }
 
@@ -172,12 +174,7 @@ where
     S: Stream<Item = std::result::Result<Bytes, E>>,
     E: Into<BoxError>,
 {
-    /*
-    file.seek(SeekFrom::Start(offset))
-        .await
-        .map_err(Error::FileError)?;
-    */
-    info!("stream_to_file begin ...");
+    debug!("stream_to_file begin ...");
     // Convert the stream into an `AsyncRead`.
     let body_with_io_error = stream.map_err(|err| io::Error::new(io::ErrorKind::Other, err));
     let body_reader = StreamReader::new(body_with_io_error);
@@ -189,24 +186,20 @@ where
     tokio::io::copy(&mut body_reader, &mut file)
         .await
         .map_err(Error::FileError)?;
-    info!("stream_to_file success");
+    debug!("stream_to_file success");
     Ok(())
 }
 
-pub fn validate_path(dir: &str, file_name: &str, valid_component: usize) -> bool {
-    let path = std::path::Path::new(dir).join(file_name);
-    if let Some(path_str) = path.to_str() {
-        return is_path_valid(path_str, valid_component);
-    }
-    return false;
+pub fn validate_path(dir: &Path, file_name: &str, valid_component: usize) -> bool {
+    let path = dir.join(file_name);
+    return is_path_valid(path.as_path(), valid_component);
 }
 
 // to prevent directory traversal attacks we ensure the path consists of exactly one normal
 // component
-pub fn is_path_valid(path: &str, valid_component: usize) -> bool {
-    let path = std::path::Path::new(path);
+pub fn is_path_valid(path: &Path, valid_component: usize) -> bool {
+    // let path = std::path::Path::new(path);
     let mut components = path.components().peekable();
-
     if let Some(first) = components.peek() {
         if !matches!(first, std::path::Component::Normal(_)) {
             return false;

@@ -18,6 +18,7 @@ use tokio_util::io::StreamReader;
 use tracing::{debug, info};
 use uuid::Uuid;
 use std::path::Path;
+use tempfile::tempfile;
 
 pub trait FileManager {
     // return the list of owner's file of specified category
@@ -101,6 +102,28 @@ pub async fn save_to_file(dir: &Path, mut multipart: Multipart, uuid_name: Optio
     return Ok(Vec::new());
 }
 
+// std::fs::File 还不支持异步操作
+// pub async fn save_to_temp_file(mut multipart: Multipart, uuid_name: Option<String>) -> Result<Vec<String>> {
+//     // request_uuid must place on the heading of multipart
+//     info!("save_to_temp_file( uuid_name: {:?})", uuid_name);
+//     if let Some(uuid_name) = uuid_name {
+//         if let Ok(Some(field)) = multipart.next_field().await {
+//             if let Some(field_name) = field.name() {
+//                 if field_name == uuid_name {
+//                     let data = field.bytes().await?;
+//                     let data_string = String::from_utf8(data.to_vec())?;
+//                     let uuid_prefix = uuid::Uuid::parse_str(&data_string)?;
+//                     let prefix = uuid_prefix.as_simple().to_string();
+//                     return Ok(save_to_file_with_prefix(dir, &prefix, multipart).await?);
+//                 }
+//             }
+//         }
+//     } else {
+//         return Ok(save_to_file_with_prefix(dir, "", multipart).await?);
+//     }
+//     return Ok(Vec::new());
+// }
+
 
 fn get_validate_file_name(dir: &Path, prefix_string: &str, file_name: &str, field: &Field) -> Option<String> {
     let final_file_name: String;
@@ -152,6 +175,46 @@ pub async fn save_to_file_with_prefix(dir: &Path, prefix: impl AsRef<str>, mut m
     return Ok(files);
 }
 
+// 因为std::fs::File还不支持异步操作，所以这个函数还无法实现
+// pub async fn save_temp_file(mut multipart: Multipart) -> Result<Vec<String>> {
+//     info!("save_temp_file");
+//     let mut files: Vec<String> = Vec::new();
+//     while let Ok(Some(field)) = multipart.next_field().await {
+//         if let Some(file_name) = field.file_name() {
+            
+//                 let mut file = tempfile()?;
+//                 // let mut file = create_file(&dir,  &final_file_name).await?;
+//                 stream_to_temp_file(&mut file, field).await?;
+//                 files.push(file_name);
+            
+//         } else {
+//             continue;
+//         };
+//     }
+//     return Ok(files);
+// }
+
+// 因为std::fs::File还不支持异步操作，所以这个函数还无法实现
+// pub async fn stream_to_temp_file<S, E>(file: &mut std::fs::File, stream: S) -> Result<()>
+// where
+//     S: Stream<Item = std::result::Result<Bytes, E>>,
+//     E: Into<BoxError>,
+// {
+//     debug!("stream_to_file begin ...");
+//     // Convert the stream into an `AsyncRead`.
+//     let body_with_io_error = stream.map_err(|err| io::Error::new(io::ErrorKind::Other, err));
+//     let body_reader = StreamReader::new(body_with_io_error);
+//     futures::pin_mut!(body_reader);
+
+//     let mut file = BufWriter::new(file);
+
+//     // Copy the body into the file.
+//     tokio::io::copy(&mut body_reader, &mut file)
+//         .await
+//         .map_err(Error::FileError)?;
+//     debug!("stream_to_file success");
+//     Ok(())
+// }
 
 
 async fn create_file(dir: &Path, file_name: impl AsRef<str>) -> Result<File> {

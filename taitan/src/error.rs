@@ -76,7 +76,7 @@ pub enum Error {
     JwtError(#[from] jsonwebtoken::errors::Error),
 
     #[error("file error: {0:?}")]
-    FileError(std::io::Error),
+    FileError(#[from] std::io::Error),
 
     #[error("file error: {0:?}")]
     ReqwestError(#[from] reqwest::Error),
@@ -85,7 +85,10 @@ pub enum Error {
     FromUtf8Error(#[from] std::string::FromUtf8Error),
 
     #[error("uuid error: {0:?}")]
-    UuidError(#[from] uuid::Error)
+    UuidError(#[from] uuid::Error),
+
+    // #[error("temp file error: {0:?}")]
+    // TempFileError(#[from] tempfile::)
 }
 
 impl Error {

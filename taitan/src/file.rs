@@ -130,12 +130,14 @@ fn get_validate_file_name(dir: &Path, prefix_string: &str, file_name: &str, fiel
     if prefix_string.is_empty() {
         final_file_name = file_name.to_owned();
         if !validate_path(dir.as_ref(), &final_file_name, 1) {
-            return None;
+            info!("not valid with no prefix path");
+            // return None;
         }
     } else {
         final_file_name = format!("{}.{}", prefix_string.to_string(), file_name.to_owned());
         if !validate_path(dir.as_ref(), &final_file_name, 2) {
-            return None;
+            info!("not valid with prefix path");
+            // return None;
         }
     }
 

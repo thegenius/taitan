@@ -115,18 +115,18 @@ fn get_validate_file_name(dir: &str, prefix_string: &str, file_name: &str, field
         }
     }
 
-    let (_, upper_bound)= field.size_hint();
-    if upper_bound.is_none() {
-        debug!("file size not known");
-        return None;
-    }
+    // let (_, upper_bound)= field.size_hint();
+    // if upper_bound.is_none() {
+    //     debug!("file size not known");
+    //     return None;
+    // }
     
-    const SINGLE_FILE_MAX_SIZE: usize = 5 * 1024 * 1024; // single file limit
-    let upper_bound = upper_bound.unwrap();
-    if upper_bound > SINGLE_FILE_MAX_SIZE {
-        debug!("file size larger than 5MB");
-        return None;
-    }
+    // const SINGLE_FILE_MAX_SIZE: usize = 5 * 1024 * 1024; // single file limit
+    // let upper_bound = upper_bound.unwrap();
+    // if upper_bound > SINGLE_FILE_MAX_SIZE {
+    //     debug!("file size larger than 5MB");
+    //     return None;
+    // }
 
     return Some(final_file_name);
 }

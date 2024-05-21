@@ -163,7 +163,7 @@ pub async fn save_to_file_with_prefix(dir: &Path, prefix: impl AsRef<str>, mut m
         if let Some(file_name) = field.file_name() {
             let final_file_name = get_validate_file_name(dir, prefix_string.as_ref(), file_name, &field);
             if let Some(final_file_name) = final_file_name {
-                debug!("save_to_file_with_prefix - final_file_name: {:?}", final_file_name);
+                info!("save_to_file_with_prefix - final_file_name: {:?}", final_file_name);
                 let mut file = create_file(&dir,  &final_file_name).await?;
                 stream_to_file(&mut file, field).await?;
                 files.push(final_file_name);
@@ -237,7 +237,7 @@ where
     S: Stream<Item = std::result::Result<Bytes, E>>,
     E: Into<BoxError>,
 {
-    debug!("stream_to_file begin ...");
+    info!("stream_to_file begin ...");
     // Convert the stream into an `AsyncRead`.
     let body_with_io_error = stream.map_err(|err| io::Error::new(io::ErrorKind::Other, err));
     let body_reader = StreamReader::new(body_with_io_error);
@@ -249,7 +249,7 @@ where
     tokio::io::copy(&mut body_reader, &mut file)
         .await
         .map_err(Error::FileError)?;
-    debug!("stream_to_file success");
+    info!("stream_to_file success");
     Ok(())
 }
 

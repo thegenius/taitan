@@ -117,6 +117,7 @@ pub async fn save_to_file_with_prefix(dir: impl AsRef<str>, prefix: impl AsRef<s
             const SINGLE_FILE_MAX_SIZE: usize = 5 * 1024 * 1024; // single file limit
             let upper_bound = upper_bound.unwrap();
             if upper_bound > SINGLE_FILE_MAX_SIZE {
+                debug!("");
                 return Err(Error::logic_error("file size larger than 5MB"));
             }
 
@@ -132,10 +133,12 @@ pub async fn save_to_file_with_prefix(dir: impl AsRef<str>, prefix: impl AsRef<s
 
 
 async fn create_file(dir: impl AsRef<str>, file_name: impl AsRef<str>) -> Result<File> {
+    info!("create_file: {:?}, {:?}", dir.as_ref(), file_name.as_ref());
     let path = std::path::Path::new(dir.as_ref()).join(file_name.as_ref());
     if !path_is_valid(path.to_str().unwrap()) {
         return Err(Error::logic_error("invalid path"));
     }
+    info!("create_file path valid: {:?}, {:?}", dir.as_ref(), file_name.as_ref());
     let file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -143,6 +146,7 @@ async fn create_file(dir: impl AsRef<str>, file_name: impl AsRef<str>) -> Result
         .open(path)
         .await
         .map_err(|err| Error::FileError(err))?;
+    info!("create_file success: {:?}, {:?}", dir.as_ref(), file_name.as_ref());
     Ok(file)
 }
 

@@ -21,7 +21,9 @@ pub trait NestTonic: Sized {
         S::Future: Send + 'static;
 }
 
-impl NestTonic for Router {
+impl<T> NestTonic for Router<T>
+    where T: 'static + Clone + Send + Sync
+{
     fn nest_tonic<S, P: AsRef<str>>(self, path: P, svc: S) -> Self
     where
         S: Service<Req, Error = Infallible> + Clone + Send + 'static,

@@ -12,13 +12,13 @@ use futures::{FutureExt, Stream, TryStreamExt};
 use serde_json::error::Category;
 use std::io;
 use std::io::SeekFrom;
+use std::path::Path;
+use tempfile::tempfile;
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio::{fs::File, fs::OpenOptions, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tracing::{debug, info};
 use uuid::Uuid;
-use std::path::Path;
-use tempfile::tempfile;
 
 pub trait FileManager {
     // return the list of owner's file of specified category
@@ -81,7 +81,11 @@ fn save_etag(file_name: &str, etag: &str) -> Result<()> {
    --AaB03x--
 */
 // multipart可以上传多个文件，但是整体的multipart的axum默认是2MB，在taitan中默认改为了10MB
-pub async fn save_to_file(dir: &Path, mut multipart: Multipart, uuid_name: Option<String>) -> Result<Vec<String>> {
+pub async fn save_to_file(
+    dir: &Path,
+    mut multipart: Multipart,
+    uuid_name: Option<String>,
+) -> Result<Vec<String>> {
     // request_uuid must place on the heading of multipart
     info!("save_to_file({:?}, {:?})", dir, uuid_name);
     if let Some(uuid_name) = uuid_name {
@@ -124,8 +128,12 @@ pub async fn save_to_file(dir: &Path, mut multipart: Multipart, uuid_name: Optio
 //     return Ok(Vec::new());
 // }
 
-
-fn get_validate_file_name(dir: &Path, prefix_string: &str, file_name: &str, field: &Field) -> Option<String> {
+fn get_validate_file_name(
+    dir: &Path,
+    prefix_string: &str,
+    file_name: &str,
+    field: &Field,
+) -> Option<String> {
     let final_file_name: String;
     if prefix_string.is_empty() {
         final_file_name = file_name.to_owned();
@@ -146,7 +154,7 @@ fn get_validate_file_name(dir: &Path, prefix_string: &str, file_name: &str, fiel
     //     debug!("file size not known");
     //     return None;
     // }
-    
+
     // const SINGLE_FILE_MAX_SIZE: usize = 5 * 1024 * 1024; // single file limit
     // let upper_bound = upper_bound.unwrap();
     // if upper_bound > SINGLE_FILE_MAX_SIZE {
@@ -157,16 +165,24 @@ fn get_validate_file_name(dir: &Path, prefix_string: &str, file_name: &str, fiel
     return Some(final_file_name);
 }
 
-pub async fn save_to_file_with_prefix(dir: &Path, prefix: impl AsRef<str>, mut multipart: Multipart) -> Result<Vec<String>> {
+pub async fn save_to_file_with_prefix(
+    dir: &Path,
+    prefix: impl AsRef<str>,
+    mut multipart: Multipart,
+) -> Result<Vec<String>> {
     info!("save_to_file_with_prefix({:?}, {:?})", dir, prefix.as_ref());
     let mut files: Vec<String> = Vec::new();
     let prefix_string = prefix.as_ref();
     while let Ok(Some(field)) = multipart.next_field().await {
         if let Some(file_name) = field.file_name() {
-            let final_file_name = get_validate_file_name(dir, prefix_string.as_ref(), file_name, &field);
+            let final_file_name =
+                get_validate_file_name(dir, prefix_string.as_ref(), file_name, &field);
             if let Some(final_file_name) = final_file_name {
-                info!("save_to_file_with_prefix - final_file_name: {:?}", final_file_name);
-                let mut file = create_file(&dir,  &final_file_name).await?;
+                info!(
+                    "save_to_file_with_prefix - final_file_name: {:?}",
+                    final_file_name
+                );
+                let mut file = create_file(&dir, &final_file_name).await?;
                 stream_to_file(&mut file, field).await?;
                 files.push(final_file_name);
             }
@@ -183,12 +199,12 @@ pub async fn save_to_file_with_prefix(dir: &Path, prefix: impl AsRef<str>, mut m
 //     let mut files: Vec<String> = Vec::new();
 //     while let Ok(Some(field)) = multipart.next_field().await {
 //         if let Some(file_name) = field.file_name() {
-            
+
 //                 let mut file = tempfile()?;
 //                 // let mut file = create_file(&dir,  &final_file_name).await?;
 //                 stream_to_temp_file(&mut file, field).await?;
 //                 files.push(file_name);
-            
+
 //         } else {
 //             continue;
 //         };
@@ -218,7 +234,6 @@ pub async fn save_to_file_with_prefix(dir: &Path, prefix: impl AsRef<str>, mut m
 //     Ok(())
 // }
 
-
 async fn create_file(dir: &Path, file_name: impl AsRef<str>) -> Result<File> {
     debug!("create_file: {:?}, {:?}", dir, file_name.as_ref());
     let path = dir.join(file_name.as_ref());
@@ -230,7 +245,11 @@ async fn create_file(dir: &Path, file_name: impl AsRef<str>) -> Result<File> {
         .open(path)
         .await
         .map_err(|err| Error::FileError(err))?;
-    debug!("create_file success: {:?}, {:?}", path_clone, file_name.as_ref());
+    debug!(
+        "create_file success: {:?}, {:?}",
+        path_clone,
+        file_name.as_ref()
+    );
     Ok(file)
 }
 

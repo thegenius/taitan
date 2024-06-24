@@ -39,13 +39,13 @@ impl<'a> HttpConfig<'a> {
         domain: impl Into<Cow<'a, str>>,
         port: u16,
         tls: Option<TlsConfig<'a>>,
-        max_body_limit: Option<usize>
+        max_body_limit: Option<usize>,
     ) -> HttpConfig<'a> {
         Self {
             domain: domain.into(),
             port,
             tls,
-            max_body_limit: max_body_limit.unwrap_or(DEFAULT_MAX_BODY_LIMIT)
+            max_body_limit: max_body_limit.unwrap_or(DEFAULT_MAX_BODY_LIMIT),
         }
     }
     pub fn from(
@@ -57,7 +57,7 @@ impl<'a> HttpConfig<'a> {
             domain: domain.into(),
             port: 80,
             tls: Some(TlsConfig::new(443, pem_file, key_file)),
-            max_body_limit: DEFAULT_MAX_BODY_LIMIT
+            max_body_limit: DEFAULT_MAX_BODY_LIMIT,
         }
     }
     pub fn from_domain(domain: impl Into<Cow<'a, str>>) -> HttpConfig<'a> {
@@ -65,7 +65,7 @@ impl<'a> HttpConfig<'a> {
             domain: domain.into(),
             port: 80,
             tls: None,
-            max_body_limit: DEFAULT_MAX_BODY_LIMIT
+            max_body_limit: DEFAULT_MAX_BODY_LIMIT,
         }
     }
     pub fn local() -> HttpConfig<'a> {
@@ -73,7 +73,7 @@ impl<'a> HttpConfig<'a> {
             domain: "localhost".into(),
             port: 80,
             tls: None,
-            max_body_limit: DEFAULT_MAX_BODY_LIMIT
+            max_body_limit: DEFAULT_MAX_BODY_LIMIT,
         }
     }
 }

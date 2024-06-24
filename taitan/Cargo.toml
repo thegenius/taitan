@@ -13,6 +13,12 @@ rust-version = {workspace = true}
 axum = {workspace = true}
 axum-server = {version = "0.6.0", features = ["tls-rustls"]}
 axum-extra = {version = "0.9.2", features = ["typed-header"]}
+hyper = {workspace = true}
+bytes = "1.2"
+http = "1"
+http-body = "1"
+tonic = "0.11.0"
+
 
 tokio = {version = "1.35.1", features = ["full"]}
 tokio-util = {version = "0.7", features = ["io"]}
@@ -39,6 +45,7 @@ tracing-subscriber = {version = "0.3.18"}
 chrono = {version = "0.4.2"}
 jsonwebtoken = { version = "9.2.0"}
 luna-orm = {version = "0.3.6"}
+
 
 
 [dev-dependencies]

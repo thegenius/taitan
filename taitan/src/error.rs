@@ -23,7 +23,7 @@ pub enum ErrorCode {
     FileError,
     ReqwestError,
     FromUtf8Error,
-    UuidError
+    UuidError,
 }
 
 impl ErrorCode {
@@ -41,7 +41,7 @@ impl ErrorCode {
             Self::JwtError => "JwtError",
             Self::FileError => "FileError",
             Self::ReqwestError => "ReqwestError",
-            Self::UuidError => "UuidError"
+            Self::UuidError => "UuidError",
         }
     }
 
@@ -86,7 +86,6 @@ pub enum Error {
 
     #[error("uuid error: {0:?}")]
     UuidError(#[from] uuid::Error),
-
     // #[error("temp file error: {0:?}")]
     // TempFileError(#[from] tempfile::)
 }
@@ -104,7 +103,7 @@ impl Error {
             Error::FileError(_) => ErrorCode::FileError,
             Error::ReqwestError(_) => ErrorCode::ReqwestError,
             Error::FromUtf8Error(_) => ErrorCode::FromUtf8Error,
-            Error::UuidError(_) => ErrorCode::UuidError
+            Error::UuidError(_) => ErrorCode::UuidError,
         }
     }
     pub fn logic_error<'a>(msg: impl Into<Cow<'a, str>>) -> Self {

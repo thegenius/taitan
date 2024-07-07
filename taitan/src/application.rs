@@ -19,6 +19,10 @@ use std::time::Duration;
 use tokio::signal;
 use tokio::time::sleep;
 use tracing::info;
+use std::fs::File;
+use daemonize::Daemonize;
+
+use tokio::runtime::Runtime;
 
 pub struct Application<'a> {
     router: Router,
@@ -35,6 +39,13 @@ fn get_default_router() -> Router {
         .route("/health", get(ok))
         .route("/ready", get(ok));
     return router;
+}
+
+pub enum RunningMode {
+    Http,
+    Https,
+    HttpDaemon,
+    HttpsDaemon,
 }
 
 impl<'a> Application<'a> {
@@ -63,15 +74,57 @@ impl<'a> Application<'a> {
         self.router = merged;
     }
 
-    #[cfg(debug_assertions)]
-    pub async fn run(self) {
-        self.run_http().await;
+    fn get_daemonize() -> Daemonize<&'a str> {
+        let stdout = File::create("/tmp/daemon.out").unwrap();
+        let stderr = File::create("/tmp/daemon.err").unwrap();
+        let daemonize = Daemonize::new()
+            .pid_file("/tmp/test.pid") // Every method except `new` and `start`
+            .chown_pid_file(true)      // is optional, see `Daemonize` documentation
+            .working_directory("/tmp") // for default behaviour.
+            .user("nobody")
+            .group("daemon") // Group name
+            .group(2)        // or group id.
+            .umask(0o777)    // Set umask, `0o027` by default.
+            .stdout(stdout)  // Redirect stdout to `/tmp/daemon.out`.
+            .stderr(stderr)  // Redirect stderr to `/tmp/daemon.err`.
+            .privileged_action(|| "Executed before drop privileges");
+        return daemonize;
+    }
+    pub async fn run(self, mode: RunningMode) {
+        match mode {
+            RunningMode::Http => {
+                self.run_http().await;
+            }
+            RunningMode::Https => {
+                self.run_https().await;
+            }
+            RunningMode::HttpDaemon => {
+                let daemonize = Application::get_daemonize();
+                match daemonize.start() {
+                    Ok(_) => {
+                        let rt = Runtime::new().unwrap();
+                        rt.block_on(async {
+                            self.run_http().await;
+                        })
+                    }
+                    Err(e) => eprintln!("Error, {}", e),
+                }
+            }
+            RunningMode::HttpsDaemon => {
+                let daemonize = Application::get_daemonize();
+                match daemonize.start() {
+                    Ok(_) => {
+                        let rt = Runtime::new().unwrap();
+                        rt.block_on(async {
+                            self.run_https().await;
+                        })
+                    }
+                    Err(e) => eprintln!("Error, {}", e),
+                }
+            }
+        }
     }
 
-    #[cfg(not(debug_assertions))]
-    pub async fn run(self) {
-        self.run_https().await;
-    }
 
     pub async fn run_https(self) {
         let tls_config = self
@@ -100,7 +153,6 @@ impl<'a> Application<'a> {
     }
 }
 
-#[cfg(debug_assertions)]
 async fn make_http_server<'a>(router: Router, http_config: HttpConfig<'a>) {
     let addr = SocketAddr::from(([0, 0, 0, 0], http_config.port));
 
@@ -117,7 +169,6 @@ async fn make_http_server<'a>(router: Router, http_config: HttpConfig<'a>) {
         .unwrap();
 }
 
-//#[cfg(not(debug_assertions))]
 async fn make_https_server<'a>(router: Router, http_config: HttpConfig<'a>) {
     let tls_config = http_config.tls.expect("tls config must be set.");
     let pem_file = PathBuf::from(tls_config.pem_file.as_ref());

@@ -23,6 +23,7 @@ use std::fs::File;
 use daemonize::Daemonize;
 
 use tokio::runtime::Runtime;
+use tokio::runtime::Builder;
 
 pub struct Application<'a> {
     router: Router,
@@ -102,7 +103,7 @@ impl<'a> Application<'a> {
                 let daemonize = Application::get_daemonize();
                 match daemonize.start() {
                     Ok(_) => {
-                        let rt = Runtime::new().unwrap();
+                        let rt = Builder::new_multi_thread().enable_all().build().unwrap();
                         rt.block_on(async {
                             self.run_http().await;
                         })
@@ -114,7 +115,7 @@ impl<'a> Application<'a> {
                 let daemonize = Application::get_daemonize();
                 match daemonize.start() {
                     Ok(_) => {
-                        let rt = Runtime::new().unwrap();
+                        let rt = Builder::new_multi_thread().enable_all().build().unwrap();
                         rt.block_on(async {
                             self.run_https().await;
                         })

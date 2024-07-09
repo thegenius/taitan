@@ -84,12 +84,12 @@ impl Application {
         }
     }
 
-    fn file_or_dir_exists<P: AsRef<Path>>(path: &P) -> bool {
-        std::fs::metadata(path).is_ok()
+    fn file_or_dir_exists<P: AsRef<Path>>(path: P) -> bool {
+        std::fs::metadata(path.as_ref()).is_ok()
     }
 
-    fn ensure_folder_exists(path: &str) -> Result<(), std::io::Error> {
-        let path = Path::new(path);
+    fn ensure_folder_exists<P: AsRef<Path>>(path: P) -> Result<(), std::io::Error> {
+        let path = path.as_ref();
         if !path.exists() || !metadata(path)?.is_dir() {
             create_dir_all(path)?;
         }
@@ -106,19 +106,25 @@ impl Application {
         self.router = merged;
     }
 
-    pub async fn run(self, mode: RunningMode) {
+    pub fn run(self, mode: RunningMode) {
+        let rt = Builder::new_multi_thread().enable_all().build().unwrap();
         match mode {
             RunningMode::Http => {
-                self.run_http().await;
+                rt.block_on(async {
+                    self.run_http().await;
+                })
             }
             RunningMode::Https => {
-                self.run_https().await;
+                rt.block_on(async {
+                    self.run_https().await;
+                })
             }
             RunningMode::HttpDaemon => {
                 let daemonize = get_daemonize(&self.args.workspace, &self.args.daemon);
+                let daemonize_dir = Path::new(&self.args.workspace).join("daemon");
+                Application::ensure_folder_exists(&daemonize_dir).unwrap();
                 match daemonize.start() {
                     Ok(_) => {
-                        let rt = Builder::new_multi_thread().enable_all().build().unwrap();
                         rt.block_on(async {
                             self.run_http().await;
                         })
@@ -128,6 +134,8 @@ impl Application {
             }
             RunningMode::HttpsDaemon => {
                 let daemonize = get_daemonize(&self.args.workspace, &self.args.daemon);
+                let daemonize_dir = Path::new(&self.args.workspace).join("daemon");
+                Application::ensure_folder_exists(&daemonize_dir).unwrap();
                 match daemonize.start() {
                     Ok(_) => {
                         let rt = Builder::new_multi_thread().enable_all().build().unwrap();

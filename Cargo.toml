@@ -7,9 +7,10 @@ members = [
 default-members = [
   "taitan"
 ]
+resolver = "2"
 
 [workspace.package]
-version = "0.2.4"
+version = "0.2.5"
 rust-version = "1.75.0"
 
 [workspace.dependencies]
@@ -18,11 +19,11 @@ axum-server = {version = "0.6.0", features = ["tls-rustls"]}
 tokio = {version = "1.35.1", features = ["full"]}
 tokio-util = {version = "0.7", features = ["io"]}
 http-body-util = {version = "0.1.0"}
-reqwest = {version = "0.11", features = ["json"]}
+reqwest = {version = "0.12.5", features = ["json"]}
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5.0", features = ["fs", "trace"] }
-derive_builder = {version = "0.13.0"}
-clap = {version = "4.4.18"}
+derive_builder = {version = "0.20.0" }
+clap = {version = "4.4.18", features = ["derive"]}
 hyper = { version = "1.0.0", features = ["full"] }
 
 
@@ -30,7 +31,7 @@ tempfile = {version = "3.10.1"}
 
 hmac = {version = "0.12.1"}
 sha2 = {version = "0.10.8"}
-base64 = {version = "0.13"}
+base64 = {version = "0.22" }
 hex = {version = "0.4.3"}
 case = {version = "1.0.0"}
 

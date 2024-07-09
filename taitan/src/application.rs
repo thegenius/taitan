@@ -1,7 +1,6 @@
-use crate::config::HttpConfig;
-use crate::config::{self, Args, StaticFilesConfig};
-use axum::Router;
 
+
+use axum::Router;
 use axum::handler::HandlerWithoutStateExt;
 use axum::{
     extract::DefaultBodyLimit,
@@ -19,15 +18,19 @@ use std::time::Duration;
 use tokio::signal;
 use tokio::time::sleep;
 use tracing::info;
-use std::fs::File;
-use daemonize::Daemonize;
+use std::fs::{create_dir_all, File, metadata};
+use clap::Parser;
+use crate::daemonize::get_daemonize;
 
 use tokio::runtime::Runtime;
 use tokio::runtime::Builder;
+use std::path::Path;
+use crate::server_conf::{Args, ApplicationConfig, HttpConfig, TlsConfig};
 
-pub struct Application<'a> {
+pub struct Application {
     router: Router,
-    args: config::Args<'a>,
+    // args: config::Args,
+    args: ApplicationConfig
 }
 
 async fn ok() -> StatusCode {
@@ -49,22 +52,50 @@ pub enum RunningMode {
     HttpsDaemon,
 }
 
-impl<'a> Application<'a> {
-    pub fn new(router: Router, args: config::Args<'a>) -> Self {
+impl Application {
+    pub fn new(router: Router, args: ApplicationConfig) -> Self {
         Self { router, args }
     }
 
     pub fn default_dev() -> Self {
-        let args = Args {
-            http: HttpConfig::local(),
-            statics: None,
-            log_dir: None,
-        };
         Self {
             router: get_default_router(),
-            args,
+            args: ApplicationConfig::default(),
         }
     }
+
+    pub fn from_args() -> Self {
+        let args = Args::parse();
+        Self::ensure_folder_exists(&args.workspace).unwrap();
+        let config_path = Path::new(&args.workspace).join(&args.application_config_file);
+        if !Self::file_or_dir_exists(&config_path) {
+            let mut default_args = ApplicationConfig::default();
+            let workspace_path = std::fs::canonicalize(args.workspace).unwrap();
+            default_args.workspace = workspace_path.as_os_str().to_string_lossy().to_string();
+            let default_args_string = toml::to_string(&default_args).unwrap();
+            std::fs::write(&config_path, default_args_string).unwrap();
+        }
+        let config_toml = std::fs::read_to_string(config_path).unwrap();
+        let args = ApplicationConfig::from_toml(config_toml);
+
+        Self {
+            router: get_default_router(),
+            args
+        }
+    }
+
+    fn file_or_dir_exists<P: AsRef<Path>>(path: &P) -> bool {
+        std::fs::metadata(path).is_ok()
+    }
+
+    fn ensure_folder_exists(path: &str) -> Result<(), std::io::Error> {
+        let path = Path::new(path);
+        if !path.exists() || !metadata(path)?.is_dir() {
+            create_dir_all(path)?;
+        }
+        Ok(())
+    }
+
 
     pub fn get_router(&self) -> &Router {
         return &self.router;
@@ -75,22 +106,6 @@ impl<'a> Application<'a> {
         self.router = merged;
     }
 
-    fn get_daemonize() -> Daemonize<&'a str> {
-        let stdout = File::create("/tmp/daemon.out").unwrap();
-        let stderr = File::create("/tmp/daemon.err").unwrap();
-        let daemonize = Daemonize::new()
-            .pid_file("/tmp/test.pid") // Every method except `new` and `start`
-            .chown_pid_file(true)      // is optional, see `Daemonize` documentation
-            .working_directory("/tmp") // for default behaviour.
-            .user("nobody")
-            .group("daemon") // Group name
-            .group(2)        // or group id.
-            .umask(0o777)    // Set umask, `0o027` by default.
-            .stdout(stdout)  // Redirect stdout to `/tmp/daemon.out`.
-            .stderr(stderr)  // Redirect stderr to `/tmp/daemon.err`.
-            .privileged_action(|| "Executed before drop privileges");
-        return daemonize;
-    }
     pub async fn run(self, mode: RunningMode) {
         match mode {
             RunningMode::Http => {
@@ -100,7 +115,7 @@ impl<'a> Application<'a> {
                 self.run_https().await;
             }
             RunningMode::HttpDaemon => {
-                let daemonize = Application::get_daemonize();
+                let daemonize = get_daemonize(&self.args.daemon);
                 match daemonize.start() {
                     Ok(_) => {
                         let rt = Builder::new_multi_thread().enable_all().build().unwrap();
@@ -112,7 +127,7 @@ impl<'a> Application<'a> {
                 }
             }
             RunningMode::HttpsDaemon => {
-                let daemonize = Application::get_daemonize();
+                let daemonize = get_daemonize(&self.args.daemon);
                 match daemonize.start() {
                     Ok(_) => {
                         let rt = Builder::new_multi_thread().enable_all().build().unwrap();
@@ -136,14 +151,14 @@ impl<'a> Application<'a> {
             .expect("tls config must be set when running https server.");
 
         info!(name = "TAITAN", "start https server ...");
-        let http_port = self.args.http.port.to_string();
-        let https_port = tls_config.port.to_string();
+        let http_port = self.args.http.http_port.to_string();
+        let https_port = tls_config.https_port.to_string();
         tokio::spawn(make_redirect_server(
-            self.args.http.port,
+            self.args.http.http_port,
             http_port,
             https_port,
         ));
-        make_https_server(self.router, self.args.http).await;
+        make_https_server(self.router, self.args).await;
     }
 
     pub async fn run_http(self) {
@@ -154,8 +169,8 @@ impl<'a> Application<'a> {
     }
 }
 
-async fn make_http_server<'a>(router: Router, http_config: HttpConfig<'a>) {
-    let addr = SocketAddr::from(([0, 0, 0, 0], http_config.port));
+async fn make_http_server<'a>(router: Router, http_config: HttpConfig) {
+    let addr = SocketAddr::from(([0, 0, 0, 0], http_config.http_port));
 
     let handle = Handle::new();
     tokio::spawn(graceful_shutdown(handle.clone()));
@@ -163,29 +178,29 @@ async fn make_http_server<'a>(router: Router, http_config: HttpConfig<'a>) {
         .handle(handle)
         .serve(
             router
-                .layer(DefaultBodyLimit::max(http_config.max_body_limit))
+                .layer(DefaultBodyLimit::max(http_config.max_body_size))
                 .into_make_service_with_connect_info::<SocketAddr>(),
         )
         .await
         .unwrap();
 }
 
-async fn make_https_server<'a>(router: Router, http_config: HttpConfig<'a>) {
-    let tls_config = http_config.tls.expect("tls config must be set.");
-    let pem_file = PathBuf::from(tls_config.pem_file.as_ref());
-    let key_file = PathBuf::from(tls_config.key_file.as_ref());
+async fn make_https_server<'a>(router: Router, app_config: ApplicationConfig) {
+    let tls_config = app_config.http.tls.expect("tls config must be set.");
+    let pem_file = PathBuf::from(Path::new(&app_config.workspace).join(tls_config.tls_crt));
+    let key_file = PathBuf::from(Path::new(&app_config.workspace).join(tls_config.tls_key));
     let rustls_config = RustlsConfig::from_pem_file(pem_file, key_file)
         .await
         .expect("pem file or key file not found");
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], tls_config.port));
+    let addr = SocketAddr::from(([0, 0, 0, 0], tls_config.https_port));
     let handle = Handle::new();
     tokio::spawn(graceful_shutdown(handle.clone()));
     axum_server::bind_rustls(addr, rustls_config)
         .handle(handle)
         .serve(
             router
-                .layer(DefaultBodyLimit::max(http_config.max_body_limit))
+                .layer(DefaultBodyLimit::max(app_config.http.max_body_size))
                 .into_make_service_with_connect_info::<SocketAddr>(),
         )
         .await

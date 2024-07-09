@@ -1,7 +1,7 @@
 #![allow(async_fn_in_trait)]
 #![allow(dead_code)]
 #![allow(clippy::needless_return)]
-#![forbid(unsafe_code)]
+// #![forbid(unsafe_code)]
 pub mod application;
 pub mod config;
 pub mod const_val;
@@ -14,3 +14,5 @@ pub mod spa;
 
 pub mod middleware;
 pub mod state;
+mod daemonize;
+pub mod server_conf;

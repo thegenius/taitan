@@ -64,7 +64,7 @@ impl Application {
         }
     }
 
-    pub fn from_args() -> Self {
+    pub fn from_args(router: Router) -> Self {
         let args = Args::parse();
         Self::ensure_folder_exists(&args.workspace).unwrap();
         let config_path = Path::new(&args.workspace).join(&args.application_config_file);
@@ -79,7 +79,7 @@ impl Application {
         let args = ApplicationConfig::from_toml(config_toml);
 
         Self {
-            router: get_default_router(),
+            router,
             args
         }
     }

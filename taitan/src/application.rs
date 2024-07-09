@@ -115,7 +115,7 @@ impl Application {
                 self.run_https().await;
             }
             RunningMode::HttpDaemon => {
-                let daemonize = get_daemonize(&self.args.daemon);
+                let daemonize = get_daemonize(&self.args.workspace, &self.args.daemon);
                 match daemonize.start() {
                     Ok(_) => {
                         let rt = Builder::new_multi_thread().enable_all().build().unwrap();
@@ -127,7 +127,7 @@ impl Application {
                 }
             }
             RunningMode::HttpsDaemon => {
-                let daemonize = get_daemonize(&self.args.daemon);
+                let daemonize = get_daemonize(&self.args.workspace, &self.args.daemon);
                 match daemonize.start() {
                     Ok(_) => {
                         let rt = Builder::new_multi_thread().enable_all().build().unwrap();

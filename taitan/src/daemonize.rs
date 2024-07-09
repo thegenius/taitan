@@ -11,12 +11,13 @@ use crate::server_conf::DaemonConfig;
 
 // XXX: this operation should have been done when the old service is exiting.
 // Now the new pid file just kick the old one out of the way
-fn move_old_pid(path: &str) {
-    if !Path::new(path).exists() {
+fn move_old_pid(workspace: &str, path: &str) {
+    let origin_path = Path::new(workspace).join(path);
+    if !origin_path.exists() {
         debug!("Old pid file does not exist");
         return;
     }
-    let new_path = format!("{path}.old");
+    let new_path = origin_path.join(".old");
     match fs::rename(path, &new_path) {
         Ok(()) => {
             debug!("Old pid file renamed");
@@ -24,7 +25,7 @@ fn move_old_pid(path: &str) {
         Err(e) => {
             error!(
                 "failed to rename pid file from {} to {}: {}",
-                path, new_path, e
+                origin_path.to_string_lossy(), new_path.to_string_lossy(), e
             );
         }
     }
@@ -39,12 +40,12 @@ unsafe fn gid_for_username(name: &CString) -> Option<libc::gid_t> {
 }
 
 /// Start a server instance as a daemon.
-pub fn get_daemonize(conf: &DaemonConfig) -> Daemonize<()> {
+pub fn get_daemonize(workspace: &str, conf: &DaemonConfig) -> Daemonize<()> {
     // TODO: customize working dir
 
     let daemonize = Daemonize::new()
         .umask(0o007) // allow same group to access files but not everyone else
-        .pid_file(&conf.pid_file);
+        .pid_file(Path::new(workspace).join(&conf.pid_file));
 
     let daemonize = if let Some(error_log) = conf.error_log.as_ref() {
         let err = OpenOptions::new()
@@ -55,7 +56,7 @@ pub fn get_daemonize(conf: &DaemonConfig) -> Daemonize<()> {
             // an ENXIO since O_NONBLOCK is set
             .read(true)
             .custom_flags(libc::O_NONBLOCK)
-            .open(error_log)
+            .open(Path::new(workspace).join(error_log))
             .unwrap();
         daemonize.stderr(err)
     } else {
@@ -93,7 +94,7 @@ pub fn get_daemonize(conf: &DaemonConfig) -> Daemonize<()> {
         None => daemonize,
     };
 
-    move_old_pid(&conf.pid_file);
+    move_old_pid(workspace, &conf.pid_file);
     return daemonize;
 
     // daemonize.start().unwrap(); // hard crash when fail

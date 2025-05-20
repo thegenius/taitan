@@ -1,0 +1,30 @@
+[package]
+name = "acme"
+edition = "2024"
+version.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+instant-acme = { version = "0.7.2", features = ["ring"] }
+tokio = {version = "1.44.1", features = ["full"]}
+clap = { version = "4.5.35", features = ["derive"] }
+tracing = "0.1.41"
+anyhow = "1.0.97"
+tracing-subscriber = "0.3.19"
+serde_json = "1.0.140"
+rcgen = { version = "0.13", default-features = false, features = ["pem", "crypto", "ring"] }
+
+reqwest = { version = "0.12.15", features = ["json"] }
+chrono = "0.4"
+hmac = "0.12"
+sha-1 = "0.10"
+urlencoding = "2.1"
+rand = "0.8"
+base64 = "0.21"
+dotenv = "0.15.0"
+trust-dns-resolver = { version = "0.23.2", features = ["tokio"] }
+serde = { version = "1.0.219", features = ["derive"] }
+log = "0.4.27"
+axum.workspace = true
+rustls = { version = "0.23.27" }
+rustls-pemfile = "2.2.0"

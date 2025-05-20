@@ -1,47 +1,49 @@
 [workspace]
 members = [
-  "taitan",
-  "taitan-aliyun-oss"
-, "taitan-test"]
+    "taitan",
+    "taitan-aliyun-oss",
+    "taitan-test",
+    "examples/*"
+, "taitan-acme"]
 
 default-members = [
-  "taitan"
+    "taitan"
 ]
 resolver = "2"
 
 [workspace.package]
 version = "0.2.8"
-rust-version = "1.75.0"
+rust-version = "1.85.0"
 
 [workspace.dependencies]
-axum = {version = "0.7.4", features = ["multipart"]}
-axum-server = {version = "0.6.0", features = ["tls-rustls"]}
-tokio = {version = "1.35.1", features = ["full"]}
-tokio-util = {version = "0.7", features = ["io"]}
-http-body-util = {version = "0.1.0"}
-reqwest = {version = "0.12.5", features = ["json"]}
+axum = { version = "0.7.4", features = ["multipart"] }
+axum-server = { version = "0.6.0", features = ["tls-rustls"] }
+tokio = { version = "1.35.1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["io"] }
+http-body-util = { version = "0.1.0" }
+reqwest = { version = "0.12.5", features = ["json"] }
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5.0", features = ["fs", "trace"] }
-derive_builder = {version = "0.20.0" }
-clap = {version = "4.4.18", features = ["derive"]}
+derive_builder = { version = "0.20.0" }
+clap = { version = "4.4.18", features = ["derive"] }
 hyper = { version = "1.0.0", features = ["full"] }
 
 
-tempfile = {version = "3.10.1"}
+tempfile = { version = "3.10.1" }
 
-hmac = {version = "0.12.1"}
-sha2 = {version = "0.10.8"}
-base64 = {version = "0.22" }
-hex = {version = "0.4.3"}
-case = {version = "1.0.0"}
+hmac = { version = "0.12.1" }
+sha2 = { version = "0.10.8" }
+base64 = { version = "0.22" }
+hex = { version = "0.4.3" }
+case = { version = "1.0.0" }
 
 serde = { version = "1.0.195", features = ["derive"] }
-serde_json = {version = "1.0.111"}
+serde_json = { version = "1.0.111" }
 
-futures = {version = "0.3"}
+futures = { version = "0.3" }
 
-thiserror = {version = "1.0.56"}
-tracing = {version = "0.1"}
-chrono = {version = "0.4.2"}
-jsonwebtoken = { version = "9.2.0"}
-luna-orm = {version = "0.3.6"}
+thiserror = { version = "1.0.56" }
+tracing = { version = "0.1" }
+chrono = { version = "0.4.2" }
+jsonwebtoken = { version = "9.2.0" }
+luna-orm = { version = "0.3.6" }

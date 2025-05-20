@@ -1,0 +1,7 @@
+[package]
+name = "taitan-acme"
+edition = "2024"
+version.workspace = true
+rust-version.workspace = true
+
+[dependencies]

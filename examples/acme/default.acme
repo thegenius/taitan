@@ -1,5 +1,0 @@
-{
-  "id": "https://acme-staging-v02.api.letsencrypt.org/acme/acct/200878204",
-  "key_pkcs8": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgT4CP2rSGrNDMJLOdrgCqvm7UXlW9DCwi6RHvosqyT-ehRANCAARKXz1g3u7K5JUv--nkh_5djQhWO2Mkwm5G1vhSrqcVuK88wk3A7mzkSVUQ91qv_IFfQZdfla-JwMHYgG6LVSg4",
-  "directory": "https://acme-staging-v02.api.letsencrypt.org/directory"
-}

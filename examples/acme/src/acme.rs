@@ -1,9 +1,10 @@
-use crate::update_dns_txt::{AliyunConfig, UpdateDnsTxtRequest, update_dns_txt_record};
+use crate::update_dns_txt::{AliyunConfig, DnsConfig, update_dns_txt_record};
 use instant_acme::{
     Account, AccountCredentials, AuthorizationStatus, ChallengeType, Identifier, LetsEncrypt,
     NewAccount, NewOrder, Order, OrderState, OrderStatus,
 };
 use rcgen::{CertificateParams, DistinguishedName, KeyPair};
+use rustls::crypto::CryptoProvider;
 use std::io;
 use std::io::Read;
 use std::time::Duration;
@@ -11,7 +12,7 @@ use tokio::time::sleep;
 use tracing::{error, info};
 use tracing_subscriber::fmt::format;
 
-async fn get_acme_account(acme_file_path: String) -> anyhow::Result<Account> {
+async fn get_acme_account_from_cache(acme_file_path: String) -> anyhow::Result<Account> {
     let mut acme_file_result = std::fs::File::open("default.acme");
     match acme_file_result {
         Err(err) => {
@@ -26,8 +27,10 @@ async fn get_acme_account(acme_file_path: String) -> anyhow::Result<Account> {
                     LetsEncrypt::Staging.url(),
                     None,
                 )
-                .await?;
-                let credential_data = serde_json::to_string_pretty(&credentials).unwrap();
+                .await
+                .expect("could not create new account");
+                let credential_data = serde_json::to_string_pretty(&credentials)
+                    .expect("credentials serialize to json error");
                 std::fs::write(acme_file_path, &credential_data)?;
                 info!("account credentials:\n\n{}", credential_data);
                 Ok(Account::from_credentials(credentials).await?)
@@ -45,6 +48,26 @@ async fn get_acme_account(acme_file_path: String) -> anyhow::Result<Account> {
     }
 }
 
+async fn get_acme_account() -> anyhow::Result<Account> {
+    info!("creating new account");
+    let (account, _credentials) = Account::create(
+        &NewAccount {
+            contact: &[],
+            terms_of_service_agreed: true,
+            only_return_existing: false,
+        },
+        LetsEncrypt::Staging.url(),
+        None,
+    )
+    .await
+    .map_err(anyhow::Error::from)?;
+    // let credential_data =
+    //     serde_json::to_string_pretty(&credentials).expect("credentials serialize to json error");
+    // info!("account credentials:\n\n{}", credential_data);
+    // Ok(Account::from_credentials(credentials).await?)
+    Ok(account)
+}
+
 #[derive(Debug)]
 pub struct TslPem {
     pub crt: String,
@@ -53,7 +76,7 @@ pub struct TslPem {
 
 async fn wait_order_ready(
     aliyun_config: &AliyunConfig,
-    request: &mut UpdateDnsTxtRequest,
+    dns_config: &mut DnsConfig,
     order: &mut Order,
 ) -> anyhow::Result<()> {
     let state = order.state();
@@ -64,6 +87,8 @@ async fn wait_order_ready(
 
     let authorizations = order.authorizations().await?;
     let mut challenges = Vec::with_capacity(authorizations.len());
+    info!("challenges count: {}", authorizations.len());
+    let mut challenge_txt_values: Vec<String> = Vec::new();
     for authz in &authorizations {
         match authz.status {
             AuthorizationStatus::Pending => {}
@@ -85,11 +110,10 @@ async fn wait_order_ready(
         let dns_txt_value = order.key_authorization(challenge).dns_value();
         info!("Please set the following DNS record then press the Return key:");
         info!("_acme-challenge.{} IN TXT {}", identifier, dns_txt_value);
-
-        request.txt_value = dns_txt_value;
-        update_dns_txt_record(aliyun_config, request).await?;
+        challenge_txt_values.push(dns_txt_value);
         challenges.push((identifier, &challenge.url));
     }
+    update_dns_txt_record(aliyun_config, dns_config, &challenge_txt_values).await?;
 
     // Let the server know we're ready to accept the challenges.
     for (_, url) in &challenges {
@@ -97,46 +121,34 @@ async fn wait_order_ready(
     }
 
     // Exponentially back off until the order becomes ready or invalid.
-
-    let mut tries = 1u8;
-    let mut delay = Duration::from_millis(250);
-    loop {
+    let delay = Duration::from_millis(200);
+    for i in 0..100 {
         sleep(delay).await;
-        let state = order.refresh().await.unwrap();
-        if let OrderStatus::Ready | OrderStatus::Invalid = state.status {
-            info!("order state: {:#?}", state);
-            break;
-        }
-
-        delay *= 2;
-        tries += 1;
-        match tries < 5 {
-            true => info!(?state, tries, "order is not ready, waiting {delay:?}"),
-            false => {
-                error!(tries, "order is not ready: {state:#?}");
-                return Err(anyhow::anyhow!("order is not ready"));
+        let state = order
+            .refresh()
+            .await
+            .map_err(|e| anyhow::anyhow!("order refresh error: {:?}", e))?;
+        match state.status {
+            OrderStatus::Ready => return Ok(()),
+            OrderStatus::Invalid => {
+                return Err(anyhow::anyhow!("invalid order status: {:?}", state));
             }
+            _ => {}
         }
     }
 
-    let state = order.state();
-    if state.status != OrderStatus::Ready {
-        Err(anyhow::anyhow!(
-            "unexpected order status: {:?}",
-            state.status
-        ))
-    } else {
-        Ok(())
-    }
+    Err(anyhow::anyhow!("order not ready after 20,000 ms "))
 }
 
 pub async fn gen_tls_pem(
     aliyun_config: &AliyunConfig,
-    request: &mut UpdateDnsTxtRequest,
-    acme_account_path: &str,
+    request: &mut DnsConfig,
 ) -> anyhow::Result<TslPem> {
-    let account = get_acme_account(acme_account_path.to_string()).await?;
+    let account = get_acme_account().await?;
 
+    // info!("acme account: {:?}", account);
+
+    info!("create ACME order ...");
     // Create the ACME order based on the given domain names.
     // Note that this only needs an `&Account`, so the library will let you
     // process multiple orders in parallel for a single account.
@@ -148,8 +160,10 @@ pub async fn gen_tls_pem(
     let new_order = NewOrder {
         identifiers: &identifiers,
     };
-
     let mut order = account.new_order(&new_order).await?;
+    info!("order created!");
+
+
     wait_order_ready(aliyun_config, request, &mut order).await?;
 
     // let mut names = Vec::with_capacity(challenges.len());

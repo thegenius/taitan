@@ -24,7 +24,7 @@ base64 = "0.21"
 dotenv = "0.15.0"
 trust-dns-resolver = { version = "0.23.2", features = ["tokio"] }
 serde = { version = "1.0.219", features = ["derive"] }
-log = "0.4.27"
-axum.workspace = true
-rustls = { version = "0.23.27" }
-rustls-pemfile = "2.2.0"
+rustls = { version = "0.23.27",features = [] }
+
+axum = {version = "0.8.3"}
+axum-server = { version = "0.7.2", features = ["tls-rustls-no-provider"] }

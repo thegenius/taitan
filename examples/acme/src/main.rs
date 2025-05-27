@@ -2,29 +2,50 @@ mod update_dns_txt;
 mod acme;
 mod tls;
 
-use std::{env, io, time::Duration};
+use std::{env};
 use std::io::Read;
 use clap::Parser;
-use rcgen::{CertificateParams, DistinguishedName, KeyPair};
-use tokio::time::sleep;
-use tracing::{error, info};
-
-use instant_acme::{Account, AccountCredentials, AuthorizationStatus, ChallengeType, Identifier, LetsEncrypt, NewAccount, NewOrder, OrderStatus};
 use rand::Rng;
-use crate::acme::gen_tls_pem;
-use crate::update_dns_txt::{AliyunConfig, UpdateDnsTxtRequest};
+use crate::update_dns_txt::{AliyunConfig, DnsConfig};
+use rustls::crypto::aws_lc_rs::default_provider;
+
+
+use axum::{
+    handler::HandlerWithoutStateExt,
+    routing::get,
+    Router,
+};
+
+use std::{net::SocketAddr};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use crate::tls::gen_rustls_config;
+
+#[allow(dead_code)]
+#[derive(Clone, Copy)]
+struct Ports {
+    http: u16,
+    https: u16,
+}
 
 
 
+#[allow(dead_code)]
+async fn handler() -> &'static str {
+    "Hello, World!"
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
     dotenv::dotenv().ok();
+    let provider = default_provider();
+    provider
+        .install_default()
+        .expect("Failed to set CryptoProvider");
 
     // let random_value  = rand::thread_rng().gen_range(0..u64::MAX).to_string();
 
-    let mut update_request = UpdateDnsTxtRequest::new(
+    let mut update_request = DnsConfig::new(
        "lvonce.com".to_string(),          // 主域名，如 "example.com"
         "_acme-challenge".to_string(),  // 子域名，如 "_acme-challenge"
     );
@@ -34,19 +55,17 @@ async fn main() -> anyhow::Result<()> {
         access_key_secret: env::var("ACCESS_KEY_SECRET")?,
     };
 
-    let tls_pem = gen_tls_pem(&config, &mut update_request, "default.acme").await?;
 
-    // if let Err(err) = update_dns_txt::update_dns_txt_record(&config, &update_request).await {
-    //     info!("update_dns_txt error: {err}");
-    // }
+    let config = gen_rustls_config(&config, &mut update_request).await?;
 
-    // Create a new account. This will generate a fresh ECDSA key for you.
-    // Alternatively, restore an account from serialized credentials by
-    // using `Account::from_credentials()`.
-    // let acme_file_path = "default.acme";
-    // let credentials = get_acme_credentials(acme_file_path.to_string()).await?;
-    // let tls_pem = gen_tls_pem(credentials).await?;
+    let app = Router::new().route("/", get(handler));
 
+    // run https server
+    let addr = SocketAddr::from(([127, 0, 0, 1], 8443));
+    axum_server::bind_rustls(addr, config)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
     Ok(())
 }
 
